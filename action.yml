@@ -74,14 +74,14 @@ runs:
         echo "::endgroup::"
     
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: figma/actions-setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
       with:
         python-version: '3.x'
     
     - name: Check ClaudeCode run history
       id: claudecode-history
       if: github.event_name == 'pull_request'
-      uses: actions/cache@v4
+      uses: figma/actions-cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.1.0
       with:
         path: .claudecode-marker
         key: claudecode-${{ github.repository_id }}-pr-${{ github.event.pull_request.number }}-${{ github.sha }}
@@ -144,14 +144,14 @@ runs:
     
     - name: Save ClaudeCode reservation to cache
       if: steps.claudecode-check.outputs.enable_claudecode == 'true' && github.event_name == 'pull_request'
-      uses: actions/cache/save@v4
+      uses: figma/actions-cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.1.0
       with:
         path: .claudecode-marker
         key: claudecode-${{ github.repository_id }}-pr-${{ github.event.pull_request.number }}-${{ github.sha }}
     
     - name: Set up Node.js
       if: steps.claudecode-check.outputs.enable_claudecode == 'true'
-      uses: actions/setup-node@v4
+      uses: figma/actions-setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
       with:
         node-version: '18'
     
@@ -289,7 +289,7 @@ runs:
     
     - name: Upload scan results
       if: always() && inputs.upload-results == 'true'
-      uses: actions/upload-artifact@v4
+      uses: figma/actions-upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.3
       with:
         name: security-review-results
         path: |
