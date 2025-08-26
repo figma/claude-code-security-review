@@ -52,6 +52,11 @@ inputs:
     description: 'Comma-separated list of tools Claude Code is allowed to use (e.g., "Read,Grep,LS,Bash(git diff:*),Bash(git status:*)"). If not specified, uses default read-only tools for security scanning.'
     required: false
     default: ''
+  
+  pr-number:
+    description: 'Override PR number (useful for workflow_dispatch events)'
+    required: false
+    default: ''
 
 outputs:
   findings-count:
@@ -173,7 +178,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number || '' }}
         ANTHROPIC_API_KEY: ${{ inputs.claude-api-key }}
         ENABLE_CLAUDE_FILTERING: 'true' 
         EXCLUDE_DIRECTORIES: ${{ inputs.exclude-directories }}
@@ -189,9 +194,9 @@ runs:
         echo "findings_count=0" >> $GITHUB_OUTPUT
         echo "results_file=claudecode/claudecode-results.json" >> $GITHUB_OUTPUT
         
-        # Skip ClaudeCode if not a PR
-        if [ "${{ github.event_name }}" != "pull_request" ]; then
-          echo "ClaudeCode only runs on pull requests, skipping"
+        # Skip ClaudeCode if not a PR or workflow_dispatch
+        if [ "${{ github.event_name }}" != "pull_request" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+          echo "ClaudeCode only runs on pull requests or workflow_dispatch, skipping"
           exit 0
         fi
                 
