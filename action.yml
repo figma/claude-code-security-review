@@ -58,6 +58,16 @@ inputs:
     required: false
     default: ''
 
+  comment-header-prefix:
+    description: 'Custom prefix for PR comment header (appears before the message after a colon)'
+    required: false
+    default: ''
+
+  comment-footer-text:
+    description: 'Custom footer text for PR comment (appears at the end after exploit scenario/recommendation)'
+    required: false
+    default: ''
+
 outputs:
   findings-count:
     description: 'Number of security findings'
@@ -311,6 +321,8 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         CLAUDECODE_FINDINGS: ${{ steps.claudecode-scan.outputs.findings_count }}
         SILENCE_CLAUDECODE_COMMENTS: ${{ steps.claudecode-check.outputs.silence_claudecode_comments }}
+        COMMENT_HEADER_PREFIX: ${{ inputs.comment-header-prefix }}
+        COMMENT_FOOTER_TEXT: ${{ inputs.comment-footer-text }}
       run: |
         node ${{ github.action_path }}/scripts/comment-pr-findings.js
 
