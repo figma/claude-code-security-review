@@ -157,18 +157,18 @@ async function run() {
       // Add exploit scenario if available
       if (finding.exploit_scenario || (finding.extra && finding.extra.metadata && finding.extra.metadata.exploit_scenario)) {
         const exploitScenario = finding.exploit_scenario || finding.extra.metadata.exploit_scenario;
-        commentBody += `\n---\n\n**Scenario:** ${exploitScenario}\n`;
+        commentBody += `---\n\n**Scenario:** ${exploitScenario}\n\n`;
       }
       
       // Add recommendation if available
       if (finding.recommendation || (finding.extra && finding.extra.metadata && finding.extra.metadata.recommendation)) {
         const recommendation = finding.recommendation || finding.extra.metadata.recommendation;
-        commentBody += `\n---\n\n**Recommendation:** ${recommendation}\n`;
+        commentBody += `---\n\n**Recommendation:** ${recommendation}\n\n`;
       }
 
       // Add custom footer if provided
       if (customFooterText) {
-        commentBody += `\n\n---\n\n${customFooterText}\n`;
+        commentBody += `---\n\n${customFooterText}\n`;
       }
       
       // Prepare the review comment
