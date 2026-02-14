@@ -146,7 +146,7 @@ async function run() {
       let commentBody = '';
 
       if (customHeaderPrefix) {
-        commentBody = `**${customHeaderPrefix}**\n\n${message}\n\n`;
+        commentBody = `**${customHeaderPrefix}:**\n\n${message}\n\n`;
       } else {
         commentBody = `🤖 **Security Issue**\n\n${message}\n\n---\n\n`;
         commentBody += `**Severity:** ${severity}\n`;

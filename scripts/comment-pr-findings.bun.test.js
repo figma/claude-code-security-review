@@ -433,10 +433,10 @@ describe('comment-pr-findings.js', () => {
     test('should use custom header prefix separated from message', async () => {
       const body = await runWithEnv({ COMMENT_HEADER_PREFIX: 'Acme Security' });
 
-      expect(body).toContain('**Acme Security**');
+      expect(body).toContain('**Acme Security:**');
       expect(body).toContain('SQL injection in query builder');
       // Header and message should NOT be on the same bold line
-      expect(body).not.toContain('**Acme Security: SQL injection');
+      expect(body).not.toContain('**Acme Security:: SQL injection');
     });
 
     test('should not include severity/category/tool when custom header is set', async () => {
@@ -483,7 +483,7 @@ describe('comment-pr-findings.js', () => {
       );
 
       // Verify overall structure: header, message, scenario divider, recommendation divider, footer divider
-      expect(body).toContain('**Security Review**');
+      expect(body).toContain('**Security Review:**');
       expect(body).toContain('SQL injection in query builder');
       expect(body).toContain('---\n\n**Scenario:** Attacker sends malicious input.');
       expect(body).toContain('---\n\n**Recommendation:** Sanitize all user inputs.');
