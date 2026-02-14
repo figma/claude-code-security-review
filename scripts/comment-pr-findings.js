@@ -151,7 +151,7 @@ async function run() {
         commentBody = `🤖 **Security Issue**\n\n${message}\n\n---\n\n`;
         commentBody += `**Severity:** ${severity}\n`;
         commentBody += `**Category:** ${category}\n`;
-        commentBody += `**Tool:** ClaudeCode AI Security Analysis\n`;
+        commentBody += `**Tool:** ClaudeCode AI Security Analysis\n\n`;
       }
 
       // Add exploit scenario if available
