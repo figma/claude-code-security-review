@@ -146,29 +146,29 @@ async function run() {
       let commentBody = '';
 
       if (customHeaderPrefix) {
-        commentBody = `**${customHeaderPrefix}: ${message}**\n\n`;
+        commentBody = `**${customHeaderPrefix}:**\n\n${message}\n\n`;
       } else {
-        commentBody = `🤖 **Security Issue: ${message}**\n\n`;
+        commentBody = `🤖 **Security Issue**\n\n${message}\n\n---\n\n`;
         commentBody += `**Severity:** ${severity}\n`;
         commentBody += `**Category:** ${category}\n`;
-        commentBody += `**Tool:** ClaudeCode AI Security Analysis\n`;
+        commentBody += `**Tool:** ClaudeCode AI Security Analysis\n\n`;
       }
 
       // Add exploit scenario if available
       if (finding.exploit_scenario || (finding.extra && finding.extra.metadata && finding.extra.metadata.exploit_scenario)) {
         const exploitScenario = finding.exploit_scenario || finding.extra.metadata.exploit_scenario;
-        commentBody += `\n**Scenario:** ${exploitScenario}\n`;
+        commentBody += `---\n\n**Scenario:** ${exploitScenario}\n\n`;
       }
       
       // Add recommendation if available
       if (finding.recommendation || (finding.extra && finding.extra.metadata && finding.extra.metadata.recommendation)) {
         const recommendation = finding.recommendation || finding.extra.metadata.recommendation;
-        commentBody += `\n**Recommendation:** ${recommendation}\n`;
+        commentBody += `---\n\n**Recommendation:** ${recommendation}\n\n`;
       }
 
       // Add custom footer if provided
       if (customFooterText) {
-        commentBody += `\n\n${customFooterText}\n`;
+        commentBody += `---\n\n${customFooterText}\n`;
       }
       
       // Prepare the review comment

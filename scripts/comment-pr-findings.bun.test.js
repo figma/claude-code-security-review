@@ -249,7 +249,8 @@ describe('comment-pr-findings.js', () => {
 
       await import('./comment-pr-findings.js')
       expect(capturedReviewData).toBeDefined();
-      expect(capturedReviewData.comments[0].body).toContain('🤖 **Security Issue: Insecure pickle loads**');
+      expect(capturedReviewData.comments[0].body).toContain('🤖 **Security Issue**');
+      expect(capturedReviewData.comments[0].body).toContain('Insecure pickle loads');
     });
 
     test('should generate correct yaml.load autofix', async () => {
@@ -305,7 +306,8 @@ describe('comment-pr-findings.js', () => {
 
       await import('./comment-pr-findings.js')
       expect(capturedReviewData).toBeDefined();
-      expect(capturedReviewData.comments[0].body).toContain('🤖 **Security Issue: Unsafe YAML deserialization**');
+      expect(capturedReviewData.comments[0].body).toContain('🤖 **Security Issue**');
+      expect(capturedReviewData.comments[0].body).toContain('Unsafe YAML deserialization');
     });
 
     test('should preserve indentation in autofix', async () => {
@@ -361,7 +363,131 @@ describe('comment-pr-findings.js', () => {
 
       await import('./comment-pr-findings.js')
       expect(capturedReviewData).toBeDefined();
-      expect(capturedReviewData.comments[0].body).toContain('🤖 **Security Issue: Insecure pickle loads**');
+      expect(capturedReviewData.comments[0].body).toContain('🤖 **Security Issue**');
+      expect(capturedReviewData.comments[0].body).toContain('Insecure pickle loads');
+    });
+  });
+
+  describe('Custom Header and Footer', () => {
+    // Helper to set up a finding and capture the review data
+    async function runWithEnv(envOverrides, findingOverrides = {}) {
+      for (const [key, value] of Object.entries(envOverrides)) {
+        process.env[key] = value;
+      }
+
+      const mockFindings = [{
+        file: 'test.py',
+        line: 10,
+        description: 'SQL injection in query builder',
+        severity: 'CRITICAL',
+        category: 'injection',
+        exploit_scenario: findingOverrides.exploit_scenario,
+        recommendation: findingOverrides.recommendation,
+        metadata: {
+          vulnerability_type: 'security_issue',
+          tool: 'ClaudeCode AI Security Analysis',
+          check_id: 'sql-injection'
+        }
+      }];
+
+      const mockPrFiles = [{ filename: 'test.py', patch: '@@ -10,1 +10,1 @@' }];
+
+      readFileSyncSpy.mockImplementation((path) => {
+        if (path.includes('github-event.json')) {
+          return JSON.stringify({
+            pull_request: { number: 123, head: { sha: 'abc123' } }
+          });
+        }
+        if (path === 'findings.json') {
+          return JSON.stringify(mockFindings);
+        }
+      });
+
+      let capturedReviewData;
+      spawnSyncSpy.mockImplementation((cmd, args, options) => {
+        if (cmd === 'gh' && args.includes('api')) {
+          const endpoint = args[1];
+          const method = args[args.indexOf('--method') + 1] || 'GET';
+
+          if (endpoint.includes('/pulls/123/files')) {
+            return { status: 0, stdout: JSON.stringify(mockPrFiles), stderr: '' };
+          }
+          if (endpoint.includes('/pulls/123/comments') && method === 'GET') {
+            return { status: 0, stdout: '[]', stderr: '' };
+          }
+          if (endpoint.includes('/pulls/123/reviews') && method === 'POST') {
+            if (options && options.input) {
+              capturedReviewData = JSON.parse(options.input);
+            }
+            return { status: 0, stdout: '{}', stderr: '' };
+          }
+          return { status: 0, stdout: '{}', stderr: '' };
+        }
+        return { status: 0, stdout: '{}', stderr: '' };
+      });
+
+      await import('./comment-pr-findings.js');
+      return capturedReviewData?.comments[0]?.body;
+    }
+
+    test('should use custom header prefix separated from message', async () => {
+      const body = await runWithEnv({ COMMENT_HEADER_PREFIX: 'Acme Security' });
+
+      expect(body).toContain('**Acme Security:**');
+      expect(body).toContain('SQL injection in query builder');
+      // Header and message should NOT be on the same bold line
+      expect(body).not.toContain('**Acme Security:: SQL injection');
+    });
+
+    test('should not include severity/category/tool when custom header is set', async () => {
+      const body = await runWithEnv({ COMMENT_HEADER_PREFIX: 'Custom Scanner' });
+
+      expect(body).not.toContain('**Severity:**');
+      expect(body).not.toContain('**Category:**');
+      expect(body).not.toContain('**Tool:**');
+    });
+
+    test('should add divider before custom footer', async () => {
+      const body = await runWithEnv({ COMMENT_FOOTER_TEXT: 'Powered by Acme Corp' });
+
+      expect(body).toContain('---\n\n');
+      expect(body).toContain('Powered by Acme Corp');
+    });
+
+    test('should add dividers before scenario and recommendation sections', async () => {
+      const body = await runWithEnv(
+        { COMMENT_HEADER_PREFIX: 'Security Bot' },
+        {
+          exploit_scenario: 'An attacker could inject SQL via the name parameter.',
+          recommendation: 'Use parameterized queries instead of string concatenation.'
+        }
+      );
+
+      // Each section should be preceded by a horizontal rule
+      expect(body).toContain('---\n\n**Scenario:**');
+      expect(body).toContain('---\n\n**Recommendation:**');
+      expect(body).toContain('An attacker could inject SQL via the name parameter.');
+      expect(body).toContain('Use parameterized queries instead of string concatenation.');
+    });
+
+    test('should combine custom header, sections, and footer with dividers', async () => {
+      const body = await runWithEnv(
+        {
+          COMMENT_HEADER_PREFIX: 'Security Review',
+          COMMENT_FOOTER_TEXT: 'Report issues to #security'
+        },
+        {
+          exploit_scenario: 'Attacker sends malicious input.',
+          recommendation: 'Sanitize all user inputs.'
+        }
+      );
+
+      // Verify overall structure: header, message, scenario divider, recommendation divider, footer divider
+      expect(body).toContain('**Security Review:**');
+      expect(body).toContain('SQL injection in query builder');
+      expect(body).toContain('---\n\n**Scenario:** Attacker sends malicious input.');
+      expect(body).toContain('---\n\n**Recommendation:** Sanitize all user inputs.');
+      expect(body).toContain('---\n\nReport issues to #security');
     });
   });
 
@@ -489,7 +615,7 @@ describe('comment-pr-findings.js', () => {
       expect(capturedReviewData.comments).toHaveLength(1);
       
       const comment = capturedReviewData.comments[0];
-      expect(comment.body).toContain('🤖 **Security Issue:');
+      expect(comment.body).toContain('🤖 **Security Issue**');
       expect(comment.body).toContain('**Severity:** HIGH');
       expect(comment.body).toContain('**Category:** security_issue');
       expect(comment.body).toContain('**Tool:** ClaudeCode AI Security Analysis');
